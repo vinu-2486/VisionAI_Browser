@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Electron / frontend builds
+node_modules/
+dist/
+build/
+out/
+coverage/
+frontend/dist/
+browser/dist/
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+.env.local
+.env.*.local

@@ -1,0 +1,13 @@
+{
+  "name": "visionai-browser-shell",
+  "private": true,
+  "version": "0.1.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "dependencies": {
+    "electron": "^31.3.1"
+  }
+}

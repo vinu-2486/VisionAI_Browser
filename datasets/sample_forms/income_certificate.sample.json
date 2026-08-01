@@ -1,0 +1,10 @@
+{
+  "form_id": "income_certificate",
+  "title": "Income Certificate Application",
+  "language": "ta",
+  "fields": {
+    "full_name": "Arun Kumar",
+    "date_of_birth": "12-08-1999",
+    "address": "Chennai, Tamil Nadu"
+  }
+}

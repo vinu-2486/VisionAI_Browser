@@ -1,0 +1,9 @@
+{
+  "form_id": "income_certificate",
+  "mappings": [
+    { "label": "Full name", "field_key": "full_name" },
+    { "label": "Date of birth", "field_key": "date_of_birth" },
+    { "label": "Address", "field_key": "address" },
+    { "label": "Mobile number", "field_key": "mobile_number" }
+  ]
+}
