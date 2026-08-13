@@ -1,20 +1,30 @@
-from dataclasses import dataclass, field
+from pathlib import Path
 
 
-@dataclass(slots=True)
-class PromptContext:
-    form_title: str
-    field_label: str
-    language: str = 'en'
-    hints: list[str] = field(default_factory=list)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SYSTEM_PROMPT_PATH = BASE_DIR / "prompts" / "system_prompt.txt"
+FIELD_PROMPT_PATH = BASE_DIR / "prompts" / "field_prompt.txt"
 
 
-class PromptEngine:
-    def build_field_prompt(self, context: PromptContext) -> str:
-        hints = '; '.join(context.hints)
-        hint_block = f' Helpful hints: {hints}.' if hints else ''
-        return (
-            f'You are assisting with {context.form_title}. '
-            f'Ask for {context.field_label} in simple {context.language} language.'
-            f'{hint_block}'
-        )
+def load_system_prompt():
+    return SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+
+
+def load_field_prompt():
+    return FIELD_PROMPT_PATH.read_text(encoding="utf-8")
+
+
+def build_field_prompt(field, user_response):
+
+    prompt = load_field_prompt()
+
+    return f"""
+{prompt}
+
+Detected form field:
+{field}
+
+User response:
+{user_response}
+"""
