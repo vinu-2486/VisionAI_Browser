@@ -1,29 +1,91 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers.conversation import router as conversation_router
-from app.routers.forms import router as forms_router
-from app.routers.validation import router as validation_router
+from app.core.config import settings
+from app.database.session import Base
+from app.database.session import engine
+from app.models.forms import (
+    Application,
+    ConversationMessage,
+    ConversationSession,
+)
+from app.routers import (
+    conversation,
+    forms,
+    validation,
+)
+
+
+@asynccontextmanager
+async def lifespan(
+    app: FastAPI,
+):
+
+    Base.metadata.create_all(
+        bind=engine
+    )
+
+    yield
+
 
 app = FastAPI(
-    title='VisionAI Browser API',
-    version='0.1.0',
-    description='Prototype backend for accessible government form assistance.',
+    title=settings.APP_NAME,
+    version=settings.VERSION,
+    description=(
+        "VisionAI Browser backend for "
+        "accessible government form assistance."
+    ),
+    lifespan=lifespan,
 )
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(forms_router)
-app.include_router(conversation_router)
-app.include_router(validation_router)
+
+@app.get(
+    "/",
+    tags=["System"],
+)
+def root():
+
+    return {
+        "name": "VisionAI Browser API",
+        "version": settings.VERSION,
+        "status": "online",
+    }
 
 
-@app.get('/health')
-def health_check() -> dict[str, str]:
-    return {'status': 'ok'}
+@app.get(
+    "/health",
+    tags=["System"],
+)
+def health():
+
+    return {
+        "status": "healthy",
+        "service": "visionai-backend",
+    }
+
+
+app.include_router(
+    forms.router,
+    prefix=settings.API_PREFIX,
+)
+
+app.include_router(
+    conversation.router,
+    prefix=settings.API_PREFIX,
+)
+
+app.include_router(
+    validation.router,
+    prefix=settings.API_PREFIX,
+)

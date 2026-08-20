@@ -1,22 +1,109 @@
-import Header from './components/Header';
-import AssistantPanel from './components/AssistantPanel';
-import FormSummary from './components/FormSummary';
-import HomePage from './pages/HomePage';
-import { useFormFlow } from './hooks/useFormFlow';
+import { useState } from "react";
+import Header from "./components/Header";
+import AssistantPanel from "./components/AssistantPanel";
+import FormSummary from "./components/FormSummary";
+import HomePage from "./pages/HomePage";
+
+type Page = "Home" | "Services" | "History" | "Settings";
 
 export default function App() {
-  const formFlow = useFormFlow();
+  const [page, setPage] = useState<Page>("Home");
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(21,184,166,0.18),_transparent_28%),linear-gradient(180deg,#f8fafc_0%,#eef7fb_45%,#ffffff_100%)] text-slate-900">
-      <Header />
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-8">
-        <HomePage formFlow={formFlow} />
-        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <AssistantPanel formFlow={formFlow} />
-          <FormSummary formFlow={formFlow} />
-        </section>
+    <div className="app-shell">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+      <div className="ambient ambient-three" />
+
+      <Header
+        activePage={page}
+        onNavigate={(nextPage) => setPage(nextPage as Page)}
+        onAssistant={() => setAssistantOpen(true)}
+      />
+
+      <main className="page-container">
+        {page === "Home" && (
+          <HomePage
+            onOpenAssistant={() => setAssistantOpen(true)}
+            onNavigate={(nextPage) =>
+              setPage(nextPage as Page)
+            }
+          />
+        )}
+
+        {page === "Services" && (
+          <HomePage
+            servicesOnly
+            onOpenAssistant={() => setAssistantOpen(true)}
+            onNavigate={(nextPage) =>
+              setPage(nextPage as Page)
+            }
+          />
+        )}
+
+        {page === "History" && <FormSummary />}
+
+        {page === "Settings" && (
+          <section className="settings-page">
+            <div className="settings-panel">
+              <div className="eyebrow">PREFERENCES</div>
+
+              <h1>Settings</h1>
+
+              <p>
+                Control how VisionAI communicates, assists and
+                confirms information.
+              </p>
+
+              <div className="settings-grid">
+                <div className="setting-card">
+                  <div className="setting-icon">◉</div>
+
+                  <div>
+                    <small>Language</small>
+                    <strong>English + தமிழ்</strong>
+                  </div>
+                </div>
+
+                <div className="setting-card">
+                  <div className="setting-icon">◌</div>
+
+                  <div>
+                    <small>Voice assistant</small>
+                    <strong className="success-text">
+                      Enabled
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="setting-card">
+                  <div className="setting-icon">✓</div>
+
+                  <div>
+                    <small>Submission mode</small>
+                    <strong>Always confirm</strong>
+                  </div>
+                </div>
+
+                <div className="setting-card">
+                  <div className="setting-icon">◫</div>
+
+                  <div>
+                    <small>Accessibility mode</small>
+                    <strong>Enhanced</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
+
+      <AssistantPanel
+        open={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+      />
     </div>
   );
 }

@@ -1,13 +1,77 @@
-export default function Header() {
+interface HeaderProps {
+  activePage: string;
+  onNavigate: (page: string) => void;
+  onAssistant: () => void;
+}
+
+export default function Header({
+  activePage,
+  onNavigate,
+  onAssistant,
+}: HeaderProps) {
+  const navItems = [
+    "Home",
+    "Services",
+    "History",
+    "Settings",
+  ];
+
   return (
-    <header className="border-b border-slate-200/80 bg-white/75 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-teal-700">VisionAI Browser</p>
-          <h1 className="text-2xl font-semibold text-slate-950">Conversational browser for accessible government forms</h1>
-        </div>
-        <div className="rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-800 shadow-sm">
-          Tamil + English voice support
+    <header className="topbar">
+      <div className="topbar-inner">
+
+        <button
+          className="brand"
+          onClick={() => onNavigate("Home")}
+        >
+          <div className="logo-orbit">
+            <div className="logo-core">V</div>
+
+            <div className="logo-ring" />
+
+            <span className="logo-status" />
+          </div>
+
+          <div className="brand-copy">
+            <div className="brand-name">
+              Vision<span>AI</span>
+            </div>
+
+            <div className="brand-subtitle">
+              ACCESSIBLE BROWSER
+            </div>
+          </div>
+        </button>
+
+        <nav className="desktop-nav">
+          {navItems.map((item) => (
+            <button
+              key={item}
+              className={
+                activePage === item
+                  ? "nav-item active"
+                  : "nav-item"
+              }
+              onClick={() => onNavigate(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </nav>
+
+        <div className="header-actions">
+          <div className="system-status">
+            <span />
+            System ready
+          </div>
+
+          <button
+            className="assistant-button"
+            onClick={onAssistant}
+          >
+            <span className="assistant-button-icon">◉</span>
+            <span>Open Assistant</span>
+          </button>
         </div>
       </div>
     </header>

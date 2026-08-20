@@ -1,8 +1,44 @@
+from collections.abc import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = 'sqlite:///./visionai_browser.db'
+from app.core.config import settings
 
-engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+connect_args = {}
+
+if settings.DATABASE_URL.startswith("sqlite"):
+    connect_args = {
+        "check_same_thread": False,
+    }
+
+
+engine = create_engine(
+    settings.DATABASE_URL,
+    connect_args=connect_args,
+    pool_pre_ping=True,
+)
+
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
