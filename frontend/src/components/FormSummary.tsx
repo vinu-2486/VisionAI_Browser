@@ -1,26 +1,133 @@
-import type { FormFlowState } from '../hooks/useFormFlow';
+const fields = [
+  ["Full Name", "Rakshan"],
+  ["Date of Birth", "12 August 2006"],
+  ["Address", "Chennai, Tamil Nadu"],
+  ["Mobile Number", "+91 XXXXX XXXXX"],
+  ["Purpose", "Education"],
+];
 
-type Props = {
-  formFlow: FormFlowState;
-};
-
-export default function FormSummary({ formFlow }: Props) {
+export default function FormSummary() {
   return (
-    <aside className="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
-      <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Summary</p>
-      <h2 className="mt-2 text-2xl font-semibold">Collected information</h2>
-      <div className="mt-6 space-y-4">
-        {formFlow.entries.map((entry) => (
-          <div key={entry.label} className="rounded-2xl bg-white/8 p-4 ring-1 ring-white/10">
-            <p className="text-sm text-slate-300">{entry.label}</p>
-            <p className="mt-1 text-base font-medium text-white">{entry.value || 'Awaiting input'}</p>
+    <div className="review-page">
+
+      <div className="review-intro">
+
+        <div className="eyebrow">
+          APPLICATION REVIEW
+        </div>
+
+        <h1>
+          Income Certificate
+        </h1>
+
+        <p>
+          VisionAI has collected the required
+          information. Verify it before continuing.
+        </p>
+
+      </div>
+
+      <div className="review-progress-card">
+
+        <div className="review-progress-header">
+
+          <div>
+            <small>
+              FORM COMPLETION
+            </small>
+
+            <strong>
+              4 of 5 steps complete
+            </strong>
+          </div>
+
+          <span className="ready-badge">
+            Ready for review
+          </span>
+
+        </div>
+
+        <div className="progress-bar">
+          <span />
+        </div>
+
+        <div className="progress-footer">
+          <span>
+            Information captured
+          </span>
+
+          <b>
+            82%
+          </b>
+        </div>
+
+      </div>
+
+      <div className="review-fields">
+
+        {fields.map(([label, value]) => (
+          <div
+            className="review-field-card"
+            key={label}
+          >
+
+            <div className="field-title">
+              <small>
+                {label}
+              </small>
+
+              <span>
+                ✓ VERIFIED
+              </span>
+            </div>
+
+            <strong>
+              {value}
+            </strong>
+
           </div>
         ))}
+
       </div>
-      <div className="mt-6 rounded-2xl bg-white/8 p-4 ring-1 ring-white/10">
-        <p className="text-sm text-slate-300">Confirmation</p>
-        <p className="mt-1 text-white">{formFlow.confirmationMessage}</p>
+
+      <div className="confirmation-panel">
+
+        <div className="confirmation-symbol">
+          !
+        </div>
+
+        <div className="confirmation-copy">
+
+          <small>
+            FINAL CHECK
+          </small>
+
+          <h2>
+            You remain in control.
+          </h2>
+
+          <p>
+            VisionAI will not submit the application
+            automatically. Review the information and
+            explicitly confirm before continuing.
+          </p>
+
+        </div>
+
+        <div className="confirmation-actions">
+
+          <button className="primary-cta">
+            ✓ Confirm information
+          </button>
+
+          <button className="secondary-cta">
+            ← Edit information
+          </button>
+
+        </div>
+
       </div>
-    </aside>
+
+    </div>
   );
 }

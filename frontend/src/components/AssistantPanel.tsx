@@ -1,47 +1,246 @@
-import type { FormFlowState } from '../hooks/useFormFlow';
+import { useState } from "react";
 
-type Props = {
-  formFlow: FormFlowState;
-};
+interface AssistantPanelProps {
+  open: boolean;
+  onClose: () => void;
+}
 
-export default function AssistantPanel({ formFlow }: Props) {
+export default function AssistantPanel({
+  open,
+  onClose,
+}: AssistantPanelProps) {
+  const [listening, setListening] = useState(false);
+  const [language, setLanguage] = useState<"EN" | "TA">("EN");
+  const [input, setInput] = useState("");
+
+  if (!open) {
+    return null;
+  }
+
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-700">Assistant</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Voice-guided form filling</h2>
-        </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Prototype</span>
-      </div>
+    <>
+      <div
+        className="assistant-overlay"
+        onClick={onClose}
+      />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl bg-slate-50 p-4">
-          <p className="text-sm text-slate-500">Active form</p>
-          <p className="mt-1 font-semibold text-slate-900">{formFlow.formTitle}</p>
-        </div>
-        <div className="rounded-2xl bg-slate-50 p-4">
-          <p className="text-sm text-slate-500">Current step</p>
-          <p className="mt-1 font-semibold text-slate-900">{formFlow.currentQuestion}</p>
-        </div>
-      </div>
+      <aside className="assistant-drawer">
 
-      <div className="mt-6 rounded-3xl border border-dashed border-teal-200 bg-teal-50/60 p-5">
-        <p className="text-sm font-medium text-teal-900">Assistant prompt</p>
-        <p className="mt-2 leading-7 text-slate-800">{formFlow.prompt}</p>
-      </div>
+        {/* HEADER */}
+        <div className="drawer-header">
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        {formFlow.suggestions.map((suggestion) => (
+          <div className="drawer-brand">
+
+            <div className="drawer-ai-icon">
+              V
+
+              <span />
+            </div>
+
+            <div>
+              <strong>
+                VisionAI Assistant
+              </strong>
+
+              <small>
+                <i />
+                Conversation ready
+              </small>
+            </div>
+
+          </div>
+
           <button
-            key={suggestion}
-            type="button"
-            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+            className="drawer-close"
+            onClick={onClose}
           >
-            {suggestion}
+            ×
           </button>
-        ))}
-      </div>
-    </section>
+
+        </div>
+
+        {/* STATE */}
+        <div className="assistant-state">
+
+          <div className="assistant-state-title">
+            <span />
+            ACTIVE SESSION
+          </div>
+
+          <div className="assistant-language">
+
+            <button
+              className={
+                language === "EN"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setLanguage("EN")
+              }
+            >
+              English
+            </button>
+
+            <button
+              className={
+                language === "TA"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setLanguage("TA")
+              }
+            >
+              தமிழ்
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* CHAT */}
+        <div className="conversation-area">
+
+          <div className="conversation-date">
+            TODAY
+          </div>
+
+          <div className="conversation-row ai">
+
+            <div className="conversation-avatar">
+              AI
+            </div>
+
+            <div className="conversation-content">
+
+              <small>
+                VisionAI
+              </small>
+
+              <div className="conversation-bubble">
+                {language === "EN"
+                  ? "Hello. Tell me which government service you need help with."
+                  : "வணக்கம். எந்த அரசு சேவைக்கு உதவி வேண்டும்?"}
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="conversation-row user">
+
+            <div className="conversation-bubble">
+              I want to apply for an income certificate.
+            </div>
+
+          </div>
+
+          <div className="conversation-row ai">
+
+            <div className="conversation-avatar">
+              AI
+            </div>
+
+            <div className="conversation-content">
+
+              <small>
+                VisionAI
+              </small>
+
+              <div className="conversation-bubble">
+                I found the Income Certificate
+                workflow. I will guide you through
+                the required information one step
+                at a time.
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="conversation-row ai">
+
+            <div className="conversation-avatar">
+              AI
+            </div>
+
+            <div className="conversation-content">
+
+              <small>
+                NEXT QUESTION
+              </small>
+
+              <div className="question-bubble">
+                What is your full name?
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* VOICE */}
+        <div className="assistant-control">
+
+          {listening && (
+            <div className="listening-indicator">
+              <span />
+
+              Listening for your response...
+            </div>
+          )}
+
+          <button
+            className={
+              listening
+                ? "voice-control active"
+                : "voice-control"
+            }
+            onClick={() =>
+              setListening((value) => !value)
+            }
+          >
+
+            <span className="voice-ripple" />
+
+            ◉
+
+          </button>
+
+          <h4>
+            {listening
+              ? "Listening..."
+              : "Tap to speak"}
+          </h4>
+
+          <p>
+            You can answer in English or தமிழ்.
+          </p>
+
+          {/* TEXT INPUT */}
+          <div className="assistant-input">
+
+            <input
+              value={input}
+              onChange={(event) =>
+                setInput(event.target.value)
+              }
+              placeholder="Type instead..."
+            />
+
+            <button
+              onClick={() => setInput("")}
+            >
+              ↑
+            </button>
+
+          </div>
+
+        </div>
+
+      </aside>
+    </>
   );
 }
