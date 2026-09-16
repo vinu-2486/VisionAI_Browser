@@ -2,26 +2,26 @@
 
 ## Backend endpoints
 
-The initial backend exposes a small set of endpoints for the prototype.
+The backend exposes the form schema, conversation, validation, and review flow used by the browser frontend. All backend routes are prefixed with `/api`.
 
-- `GET /health` - health check.
-- `GET /forms` - list supported form templates.
-- `GET /forms/{form_id}` - retrieve one supported form template.
-- `POST /conversation/next` - ask for the next field in a conversation flow.
-- `POST /validation/check` - validate a field value or a form payload.
+- `GET /api/health` - health check.
+- `GET /api/forms/services` - list supported services and fields.
+- `GET /api/forms/services/{service_type}` - retrieve one service template.
+- `POST /api/conversation/start` - create a guided form session.
+- `POST /api/conversation/message` - validate an answer and ask the next question.
+- `POST /api/validation/check` - validate a field value or form payload.
+- `POST /api/forms/{application_id}/review` - move a complete application to review.
+- `POST /api/forms/{application_id}/confirm` - explicitly confirm before submission.
 
 ## Example payload
 
 ```json
 {
-  "form_id": "income_certificate",
-  "current_field": "full_name",
-  "answers": {
-    "full_name": "Arun Kumar"
-  }
+  "service_type": "income_certificate",
+  "language": "en"
 }
 ```
 
 ## Notes
 
-This API is intentionally lightweight so the browser shell can evolve independently from the form intelligence layer.
+The React app uses the conversation endpoints directly. Browser speech recognition supplies the message text; the optional AI service exposes server-side Faster-Whisper transcription for clients that need it.

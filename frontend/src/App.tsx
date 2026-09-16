@@ -3,12 +3,29 @@ import Header from "./components/Header";
 import AssistantPanel from "./components/AssistantPanel";
 import FormSummary from "./components/FormSummary";
 import HomePage from "./pages/HomePage";
+import IncomeCertificatePage from "./pages/IncomeCertificatePage";
 
-type Page = "Home" | "Services" | "History" | "Settings";
+type Page = "Home" | "Services" | "History" | "Settings" | "IncomeCertificate";
+type FormMode = "manual" | "voice" | null;
 
 export default function App() {
   const [page, setPage] = useState<Page>("Home");
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [formMode, setFormMode] = useState<FormMode>(null);
+  const [assistantService, setAssistantService] = useState(
+    "income_certificate"
+  );
+
+  const openAssistant = (serviceType = "income_certificate") => {
+    if (serviceType === "income_certificate") {
+      setPage("IncomeCertificate");
+      setFormMode(null);
+      setAssistantOpen(false);
+      return;
+    }
+    setAssistantService(serviceType);
+    setAssistantOpen(true);
+  };
 
   return (
     <div className="app-shell">
@@ -19,13 +36,13 @@ export default function App() {
       <Header
         activePage={page}
         onNavigate={(nextPage) => setPage(nextPage as Page)}
-        onAssistant={() => setAssistantOpen(true)}
+        onAssistant={() => openAssistant()}
       />
 
       <main className="page-container">
         {page === "Home" && (
           <HomePage
-            onOpenAssistant={() => setAssistantOpen(true)}
+            onOpenAssistant={openAssistant}
             onNavigate={(nextPage) =>
               setPage(nextPage as Page)
             }
@@ -35,7 +52,7 @@ export default function App() {
         {page === "Services" && (
           <HomePage
             servicesOnly
-            onOpenAssistant={() => setAssistantOpen(true)}
+            onOpenAssistant={openAssistant}
             onNavigate={(nextPage) =>
               setPage(nextPage as Page)
             }
@@ -43,6 +60,14 @@ export default function App() {
         )}
 
         {page === "History" && <FormSummary />}
+
+        {page === "IncomeCertificate" && (
+          <IncomeCertificatePage
+            mode={formMode}
+            onChooseMode={setFormMode}
+            onOpenHelp={() => setAssistantOpen(true)}
+          />
+        )}
 
         {page === "Settings" && (
           <section className="settings-page">
@@ -103,6 +128,7 @@ export default function App() {
       <AssistantPanel
         open={assistantOpen}
         onClose={() => setAssistantOpen(false)}
+        serviceType={assistantService}
       />
     </div>
   );
