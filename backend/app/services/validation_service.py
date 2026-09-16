@@ -78,13 +78,26 @@ def validate_field(
                 "Please enter a valid 10-digit Indian mobile number."
             )
 
-    elif field == "address":
+    elif field in {"aadhaar", "pin"}:
+        digits = re.sub(r"\D", "", value)
+        expected = 12 if field == "aadhaar" else 6
+        if len(digits) != expected:
+            errors.append(
+                f"Please enter a valid {expected}-digit number."
+            )
+
+    elif field in {"address", "permanentAddress", "presentAddress"}:
         if len(value) < 8:
             errors.append(
                 "Please provide a more complete address."
             )
 
-    elif field == "annualIncome":
+    elif field in {
+        "annualIncome",
+        "annualIncomeAgriculture",
+        "annualIncomeSalary",
+        "annualIncomeOther",
+    }:
         cleaned = (
             value
             .replace(",", "")
@@ -125,6 +138,15 @@ def validate_field(
         "institution",
         "course",
         "purpose",
+        "gender",
+        "maritalStatus",
+        "religion",
+        "fatherName",
+        "motherName",
+        "policeStation",
+        "postOffice",
+        "district",
+        "declarationName",
     }:
         if len(value) < 2:
             errors.append(

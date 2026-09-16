@@ -23,20 +23,56 @@ SERVICE_DEFINITIONS = {
                 "required": True,
             },
             {
-                "name": "dateOfBirth",
-                "label": "Date of Birth",
+                "name": "gender",
+                "label": "Gender",
                 "question": {
-                    "en": "What is your date of birth?",
-                    "ta": "உங்கள் பிறந்த தேதி என்ன?",
+                    "en": "What is your gender?",
+                    "ta": "உங்கள் பாலினம் என்ன?",
                 },
                 "required": True,
             },
             {
-                "name": "address",
-                "label": "Address",
+                "name": "maritalStatus",
+                "label": "Marital Status",
                 "question": {
-                    "en": "What is your full address?",
-                    "ta": "உங்கள் முழு முகவரி என்ன?",
+                    "en": "What is your marital status?",
+                    "ta": "உங்கள் திருமண நிலை என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "age",
+                "label": "Age",
+                "question": {
+                    "en": "What is your age?",
+                    "ta": "உங்கள் வயது என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "religion",
+                "label": "Religion",
+                "question": {
+                    "en": "What is your religion?",
+                    "ta": "உங்கள் மதம் என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "fatherName",
+                "label": "Father's Name",
+                "question": {
+                    "en": "What is your father's full name?",
+                    "ta": "உங்கள் தந்தையின் முழு பெயர் என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "motherName",
+                "label": "Mother's Name",
+                "question": {
+                    "en": "What is your mother's full name?",
+                    "ta": "உங்கள் தாயின் முழு பெயர் என்ன?",
                 },
                 "required": True,
             },
@@ -50,11 +86,101 @@ SERVICE_DEFINITIONS = {
                 "required": True,
             },
             {
-                "name": "annualIncome",
-                "label": "Annual Income",
+                "name": "aadhaar",
+                "label": "Aadhaar Number",
                 "question": {
-                    "en": "What is your annual family income?",
-                    "ta": "உங்கள் ஆண்டு குடும்ப வருமானம் எவ்வளவு?",
+                    "en": "What is your 12 digit Aadhaar number?",
+                    "ta": "உங்கள் 12 இலக்க ஆதார் எண் என்ன?",
+                },
+                "required": False,
+            },
+            {
+                "name": "permanentAddress",
+                "label": "Permanent Address",
+                "question": {
+                    "en": "What is your permanent address?",
+                    "ta": "உங்கள் நிரந்தர முகவரி என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "presentAddress",
+                "label": "Present Address",
+                "question": {
+                    "en": "What is your present address?",
+                    "ta": "உங்கள் தற்போதைய முகவரி என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "policeStation",
+                "label": "Police Station",
+                "question": {
+                    "en": "What is your police station?",
+                    "ta": "உங்கள் காவல் நிலையம் எது?",
+                },
+                "required": True,
+            },
+            {
+                "name": "postOffice",
+                "label": "Post Office",
+                "question": {
+                    "en": "What is your post office?",
+                    "ta": "உங்கள் அஞ்சல் அலுவலகம் எது?",
+                },
+                "required": True,
+            },
+            {
+                "name": "district",
+                "label": "District",
+                "question": {
+                    "en": "What is your district?",
+                    "ta": "உங்கள் மாவட்டம் எது?",
+                },
+                "required": True,
+            },
+            {
+                "name": "pin",
+                "label": "PIN Code",
+                "question": {
+                    "en": "What is your six digit PIN code?",
+                    "ta": "உங்கள் ஆறு இலக்க அஞ்சல் குறியீடு என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "annualIncomeAgriculture",
+                "label": "Agriculture Income",
+                "question": {
+                    "en": "What is your annual agriculture income in rupees?",
+                    "ta": "விவசாயத்தின் மூலம் ஆண்டு வருமானம் எவ்வளவு?",
+                },
+                "required": True,
+            },
+            {
+                "name": "annualIncomeSalary",
+                "label": "Salary Income",
+                "question": {
+                    "en": "What is your annual salary income in rupees?",
+                    "ta": "சம்பளத்தின் மூலம் ஆண்டு வருமானம் எவ்வளவு?",
+                },
+                "required": True,
+            },
+            {
+                "name": "annualIncomeOther",
+                "label": "Other Income",
+                "question": {
+                    "en": "What is your annual income from other sources in rupees?",
+                    "ta": "பிற வழிகளில் ஆண்டு வருமானம் எவ்வளவு?",
+                },
+                "required": True,
+            },
+            {
+                "name": "annualIncome",
+                "label": "Total Annual Income",
+                "question": {
+                    "en": "What is your total annual family income in rupees?",
+                    "ta": "உங்கள் மொத்த ஆண்டு குடும்ப வருமானம் எவ்வளவு?",
                 },
                 "required": True,
             },
@@ -64,6 +190,15 @@ SERVICE_DEFINITIONS = {
                 "question": {
                     "en": "What is the purpose of this certificate?",
                     "ta": "இந்த சான்றிதழ் எதற்காக தேவை?",
+                },
+                "required": True,
+            },
+            {
+                "name": "declarationName",
+                "label": "Declaration Name",
+                "question": {
+                    "en": "Please confirm the name for the declaration.",
+                    "ta": "அறிக்கைக்கான பெயரை உறுதிப்படுத்தவும்.",
                 },
                 "required": True,
             },

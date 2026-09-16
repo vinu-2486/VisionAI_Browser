@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 interface HomePageProps {
   servicesOnly?: boolean;
-  onOpenAssistant: () => void;
+  onOpenAssistant: (serviceType?: string) => void;
   onNavigate: (page: string) => void;
 }
 
@@ -134,7 +134,7 @@ export default function HomePage({
 
                 <button
                   className="primary-cta"
-                  onClick={onOpenAssistant}
+                  onClick={() => onOpenAssistant()}
                 >
                   <span className="cta-symbol">◉</span>
 
@@ -331,9 +331,13 @@ export default function HomePage({
             <button
               key={service.title}
               className={`product-card ${service.tone}`}
-              onClick={() =>
-                setSelectedService(service.title)
-              }
+              onClick={() => {
+                if (service.title === "Income Certificate") {
+                  onOpenAssistant("income_certificate");
+                  return;
+                }
+                setSelectedService(service.title);
+              }}
             >
 
               <div className="product-card-top">
@@ -545,7 +549,13 @@ export default function HomePage({
           </div>
 
           <button
-            onClick={onOpenAssistant}
+            onClick={() =>
+              onOpenAssistant(
+                selectedService === "Income Certificate"
+                  ? "income_certificate"
+                  : undefined
+              )
+            }
           >
             Start with VisionAI
             <span>→</span>
