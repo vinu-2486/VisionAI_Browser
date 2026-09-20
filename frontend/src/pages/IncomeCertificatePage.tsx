@@ -156,9 +156,9 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
           return;
         }
         const extracted = extractFields(value, currentField?.id);
-        const extractedValue = normalizeFieldValue(currentField?.id || "", extracted[currentField?.id || ""] || value);
-        const spelling = spokenValue(currentField?.id || "", extractedValue);
-        setLastSpelling(spelling);
+const capturedId = currentField?.id && extracted[currentField.id] !== undefined ? currentField.id : Object.keys(extracted)[0] || "";
+const extractedValue = normalizeFieldValue(capturedId, extracted[capturedId] ?? value);
+const spelling = spokenValue(capturedId, extractedValue);
         if (window.speechSynthesis) {
           window.speechSynthesis.speak(new SpeechSynthesisUtterance(spelling));
         }
