@@ -25,3 +25,30 @@ The backend exposes the form schema, conversation, validation, and review flow u
 ## Notes
 
 The React app uses the conversation endpoints directly. Browser speech recognition supplies the message text; the optional AI service exposes server-side Faster-Whisper transcription for clients that need it.
+
+`POST /api/conversation/message` keeps the existing response fields and may add accepted field values for React state synchronization:
+
+```json
+{
+  "session_id": "session-id",
+  "message": "My name is Vinu Priya and my mobile number is 9876543210"
+}
+```
+
+```json
+{
+  "session_id": "session-id",
+  "application_id": 12,
+  "user_message": "My name is Vinu Priya and my mobile number is 9876543210",
+  "assistant_message": "I've entered your name and mobile number.",
+  "current_field": "email",
+  "next_field": "email",
+  "completed": false,
+  "validation_errors": [],
+  "fields": {
+    "fullName": "Vinu Priya",
+    "mobile": "9876543210"
+  },
+  "fallback_to_client": false
+}
+```

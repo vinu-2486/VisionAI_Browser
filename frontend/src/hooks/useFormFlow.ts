@@ -178,6 +178,11 @@ export function useFormFlow(
                 service_type:
                   serviceType,
                 language,
+                  data: Object.fromEntries(
+                    fields
+                      .filter((field) => field.value.trim())
+                      .map((field) => [field.id, field.value])
+                  ),
               }),
             }
           );
@@ -230,6 +235,7 @@ export function useFormFlow(
       }
     }, [
       conversationEnabled,
+      fields,
       language,
       serviceType,
     ]);
@@ -280,6 +286,15 @@ export function useFormFlow(
             .length > 0
       ).length;
     }, [fields]);
+
+  const formComplete =
+    useMemo(
+      () =>
+        fields
+          .filter((field) => field.required)
+          .every((field) => field.value.trim().length > 0),
+      [fields]
+    );
 
   /* ---------------------------------------------------------------------- */
   /* Update field                                                           */
@@ -407,6 +422,12 @@ export function useFormFlow(
       ]
     );
 
+    speakMessage(message);
+  };
+
+  const speakMessage = (
+    message: string
+  ) => {
     if (
       typeof window !==
         "undefined" &&
@@ -595,6 +616,80 @@ export function useFormFlow(
     async (
       transcript: string
     ) => {
+      if (conversationEnabled && sessionId) {
+        setBusy(true);
+        setError("");
+        setMessages((previous) => [
+          ...previous,
+          { role: "user", text: transcript },
+        ]);
+
+        try {
+          const response = await fetch(
+            `${API_URL}/conversation/message`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                session_id: sessionId,
+                message: transcript,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("The AI service could not process that answer.");
+          }
+
+          const data = await response.json();
+          if (data.fallback_to_client) {
+            throw new Error("AI service unavailable; using local form validation.");
+          }
+          const backendFields = data.fields || {};
+
+          Object.entries(backendFields).forEach(
+            ([fieldId, value]) => updateField(fieldId, String(value))
+          );
+
+          const backendErrors: FieldErrorMap = {};
+          (data.validation_errors || []).forEach((message: string) => {
+            const separator = message.indexOf(": ");
+            if (separator > 0) {
+              backendErrors[message.slice(0, separator)] = message.slice(separator + 2);
+            }
+          });
+          setFieldErrors(backendErrors);
+          setMessages((previous) => [
+            ...previous,
+            { role: "assistant", text: data.assistant_message },
+          ]);
+          setCurrentFromId(data.next_field || data.current_field);
+          if (data.next_field) {
+            const nextIndex = fields.findIndex((field) => field.id === data.next_field);
+            if (nextIndex >= 0) setCurrentIndex(nextIndex);
+          }
+          if (Object.keys(backendErrors).length) {
+            setHighlightedField(Object.keys(backendErrors)[0]);
+            setStatusMessage(data.assistant_message);
+            speakMessage(data.assistant_message);
+            return false;
+          }
+          setStatusMessage(data.assistant_message);
+          speakMessage(data.assistant_message);
+          return true;
+        } catch (backendError) {
+          setError(
+            backendError instanceof Error
+              ? `${backendError.message} Using local form validation.`
+              : "The AI service is unavailable. Using local form validation."
+          );
+        } finally {
+          setBusy(false);
+        }
+      }
+
       if (
         isNextCommand(
           transcript
@@ -1243,6 +1338,7 @@ export function useFormFlow(
     currentField,
     currentIndex,
     completedCount,
+    formComplete,
 
     updateField,
 

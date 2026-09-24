@@ -81,12 +81,13 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
   const [listening, setListening] = useState(false);
   const [lastSpelling, setLastSpelling] = useState("");
   const [sameAddress, setSameAddress] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const voiceSupported = Boolean(typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition));
   const recognition = useRef<RecognitionInstance | null>(null);
   const voiceModeRef = useRef(voiceMode);
   const listeningRef = useRef(false);
   const promptGeneration = useRef(0);
-  const { fields, currentField, completedCount, updateField, applyVoiceInput, messages, busy, error, fieldErrors, highlightedField, statusMessage, validateForSubmit, focusNextMissing } = useFormFlow("income_certificate", language, false);
+  const { fields, currentField, completedCount, formComplete, updateField, applyVoiceInput, messages, busy, error, fieldErrors, highlightedField, statusMessage, validateForSubmit, focusNextMissing } = useFormFlow("income_certificate", language, voiceMode);
   const requiredCount = fields.filter((field) => field.required).length;
 
   useEffect(() => {
@@ -107,6 +108,17 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
       updateField("presentAddress", fields.find((field) => field.id === "permanentAddress")?.value || "");
     }
   }, [sameAddress, fields.find((field) => field.id === "permanentAddress")?.value]);
+
+  useEffect(() => {
+    if (!formComplete || showSuccess) return;
+    if (validateForSubmit()) {
+      setShowSuccess(true);
+      window.speechSynthesis?.cancel();
+      window.speechSynthesis?.speak(new SpeechSynthesisUtterance(
+        "Form filled successfully. Further procedure will be informed soon."
+      ));
+    }
+  }, [formComplete, showSuccess]);
 
   const speakPromptAndListen = (message: string) => {
     if (!voiceModeRef.current) return;
@@ -181,6 +193,18 @@ const spelling = spokenValue(capturedId, extractedValue);
   const locationFields = fields.filter((field) => ["policeStation", "postOffice", "district", "pin"].includes(field.id));
   const incomeFields = fields.filter((field) => ["annualIncomeAgriculture", "annualIncomeSalary", "annualIncomeOther", "annualIncome"].includes(field.id));
   const declarationFields = fields.filter((field) => ["purpose", "declarationName"].includes(field.id));
+
+  if (showSuccess) {
+    return (
+      <section className="certificate-success" role="status" aria-live="polite">
+        <div className="success-mark">✓</div>
+        <div className="eyebrow">INCOME CERTIFICATE</div>
+        <h1>Form filled successfully</h1>
+        <p>All required information has been captured. Further procedure will be informed soon.</p>
+        <button className="success-return" onClick={() => setShowSuccess(false)}>Review filled form</button>
+      </section>
+    );
+  }
 
   return (
     <section className="certificate-page">

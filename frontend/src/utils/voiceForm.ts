@@ -88,19 +88,9 @@ function spokenDigits(value: string): string {
     .trim()
     .replace(/[-,]/g, " ");
 
-  // If speech recognition already returned digits,
-  // keep them.
-  const existingDigits = text.replace(/\D/g, "");
-
-  if (existingDigits.length > 0) {
-    return existingDigits;
-  }
-
-  // Convert spoken individual digits:
-  // "six zero zero zero four four" -> "600044"
   return text
     .split(/\s+/)
-    .map((word) => numberWords[word] ?? "")
+    .map((word) => numberWords[word] ?? word.replace(/\D/g, ""))
     .join("");
 }
 /* -------------------------------------------------------------------------- */

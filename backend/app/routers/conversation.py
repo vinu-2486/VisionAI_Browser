@@ -11,7 +11,7 @@ from app.schemas.forms import (
 from app.services.conversation_service import (
     create_session,
     get_conversation_history,
-    process_message,
+    process_ai_message,
 )
 
 
@@ -47,7 +47,7 @@ def send_message(
 ):
 
     try:
-        return process_message(
+        return process_ai_message(
             db,
             payload,
         )

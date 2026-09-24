@@ -135,6 +135,11 @@
 .helper-drawer { width: min(380px, 100vw); }
 .helper-conversation { flex: 1; padding: 25px 20px; }
 .helper-control { padding: 18px 20px 22px; }
+.certificate-success { width: min(680px, 100%); margin: 10vh auto 0; padding: 58px 34px; border: 1px solid rgba(52,211,153,.28); border-radius: 10px; background: rgba(7, 25, 31, .88); text-align: center; box-shadow: 0 25px 80px rgba(0,0,0,.22); }
+.success-mark { width: 70px; height: 70px; display: grid; place-items: center; margin: 0 auto 25px; border: 1px solid #34d399; border-radius: 50%; color: #052019; background: #6ee7b7; font-size: 34px; font-weight: 800; }
+.certificate-success h1 { margin: 12px 0 10px; color: #effff9; font-size: clamp(28px, 5vw, 44px); letter-spacing: -.04em; }
+.certificate-success p { max-width: 430px; margin: 0 auto; color: #9bb4b1; font-size: 14px; line-height: 1.65; }
+.success-return { margin-top: 28px; border: 0; border-radius: 6px; padding: 12px 18px; color: #062018; background: #6ee7b7; font-size: 11px; font-weight: 800; }
 
 @media (max-width: 820px) {
   .certificate-topbar { align-items: start; flex-direction: column; }

@@ -23,6 +23,24 @@ SERVICE_DEFINITIONS = {
                 "required": True,
             },
             {
+                "name": "mobile",
+                "label": "Mobile Number",
+                "question": {
+                    "en": "What is your 10 digit mobile number?",
+                    "ta": "உங்கள் 10 இலக்க கைபேசி எண் என்ன?",
+                },
+                "required": True,
+            },
+            {
+                "name": "email",
+                "label": "Email",
+                "question": {
+                    "en": "What is your email address?",
+                    "ta": "உங்கள் மின்னஞ்சல் முகவரி என்ன?",
+                },
+                "required": True,
+            },
+            {
                 "name": "gender",
                 "label": "Gender",
                 "question": {
@@ -32,20 +50,38 @@ SERVICE_DEFINITIONS = {
                 "required": True,
             },
             {
+                "name": "state",
+                "label": "State",
+                "question": {
+                    "en": "Which state do you live in?",
+                    "ta": "நீங்கள் எந்த மாநிலத்தில் வசிக்கிறீர்கள்?",
+                },
+                "required": True,
+            },
+            {
+                "name": "city",
+                "label": "City",
+                "question": {
+                    "en": "Which city do you live in?",
+                    "ta": "நீங்கள் எந்த நகரத்தில் வசிக்கிறீர்கள்?",
+                },
+                "required": True,
+            },
+            {
+                "name": "dateOfBirth",
+                "label": "Date of Birth",
+                "question": {
+                    "en": "What is your date of birth?",
+                    "ta": "உங்கள் பிறந்த தேதி என்ன?",
+                },
+                "required": True,
+            },
+            {
                 "name": "maritalStatus",
                 "label": "Marital Status",
                 "question": {
                     "en": "What is your marital status?",
                     "ta": "உங்கள் திருமண நிலை என்ன?",
-                },
-                "required": True,
-            },
-            {
-                "name": "age",
-                "label": "Age",
-                "question": {
-                    "en": "What is your age?",
-                    "ta": "உங்கள் வயது என்ன?",
                 },
                 "required": True,
             },
@@ -77,22 +113,13 @@ SERVICE_DEFINITIONS = {
                 "required": True,
             },
             {
-                "name": "mobile",
-                "label": "Mobile Number",
-                "question": {
-                    "en": "What is your 10 digit mobile number?",
-                    "ta": "உங்கள் 10 இலக்க கைபேசி எண் என்ன?",
-                },
-                "required": True,
-            },
-            {
                 "name": "aadhaar",
                 "label": "Aadhaar Number",
                 "question": {
                     "en": "What is your 12 digit Aadhaar number?",
                     "ta": "உங்கள் 12 இலக்க ஆதார் எண் என்ன?",
                 },
-                "required": False,
+                "required": True,
             },
             {
                 "name": "permanentAddress",
