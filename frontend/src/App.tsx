@@ -12,18 +12,16 @@ export default function App() {
   const [page, setPage] = useState<Page>("Home");
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>(null);
-  const [assistantService, setAssistantService] = useState(
-    "income_certificate"
-  );
+  const [assistantService, setAssistantService] = useState("general");
 
-  const openAssistant = (serviceType = "income_certificate") => {
+  const openAssistant = (serviceType?: string) => {
     if (serviceType === "income_certificate") {
       setPage("IncomeCertificate");
       setFormMode(null);
       setAssistantOpen(false);
       return;
     }
-    setAssistantService(serviceType);
+    setAssistantService(serviceType || "general");
     setAssistantOpen(true);
   };
 

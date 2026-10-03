@@ -6,6 +6,8 @@ DATE_FORMATS = [
     "%Y-%m-%d",
     "%d/%m/%Y",
     "%d-%m-%Y",
+    "%d %B %Y",
+    "%d %b %Y",
 ]
 
 
@@ -100,6 +102,16 @@ def normalize_field_value(field: str, value: str) -> str:
         return normalize_email(value)
     if field == "dateOfBirth":
         normalized = value.strip().replace(",", "")
+        extra_digit = re.fullmatch(
+            r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{5})",
+            normalized,
+        )
+        if extra_digit:
+            normalized = (
+                f"{extra_digit.group(1)} "
+                f"{extra_digit.group(2)} "
+                f"{extra_digit.group(3)[:4]}"
+            )
         for fmt in DATE_FORMATS:
             try:
                 return datetime.strptime(normalized, fmt).strftime("%Y-%m-%d")
@@ -108,6 +120,27 @@ def normalize_field_value(field: str, value: str) -> str:
         return normalized
     if field == "state" and value.strip().casefold() == "tamil nadu":
         return "Tamil Nadu"
+    if field == "gender":
+        gender_values = {
+            "male": "Male",
+            "man": "Male",
+            "boy": "Male",
+            "female": "Female",
+            "woman": "Female",
+            "girl": "Female",
+            "transgender": "Transgender",
+            "prefer not to say": "Prefer not to say",
+        }
+        return gender_values.get(value.strip().casefold(), value.strip())
+    if field == "maritalStatus":
+        marital_values = {
+            "single": "Single",
+            "unmarried": "Single",
+            "married": "Married",
+            "widowed": "Widowed",
+            "divorced": "Divorced",
+        }
+        return marital_values.get(value.strip().casefold(), value.strip())
     for city in TAMIL_NADU_CITIES:
         if field == "city" and city.casefold() == value.strip().casefold():
             return city

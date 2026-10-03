@@ -131,6 +131,18 @@ export function normalizeDateOfBirth(value: string): string {
     return toIsoDate(day, month, year) || value.trim();
   }
 
+  // Speech recognition can append one repeated digit to a year
+  // (for example, "20066" for 2006).
+  match = text.match(
+    /^(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\s+(\d{5})$/i
+  );
+  if (match) {
+    const shortenedYear = match[3].slice(0, 4);
+    return normalizeDateOfBirth(
+      `${match[1]} ${match[2]} ${shortenedYear}`
+    );
+  }
+
   // 26-5-2007
   // 26/5/2007
   // 26.5.2007
