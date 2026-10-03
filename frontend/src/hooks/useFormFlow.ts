@@ -30,6 +30,11 @@ export interface ConversationMessage {
   text: string;
 }
 
+export interface VoiceInputResult {
+  accepted: boolean;
+  nextField?: string | null;
+}
+
 const API_URL =
   "http://localhost:8000/api";
 
@@ -673,12 +678,13 @@ export function useFormFlow(
           if (Object.keys(backendErrors).length) {
             setHighlightedField(Object.keys(backendErrors)[0]);
             setStatusMessage(data.assistant_message);
-            speakMessage(data.assistant_message);
-            return false;
+            return { accepted: false };
           }
           setStatusMessage(data.assistant_message);
-          speakMessage(data.assistant_message);
-          return true;
+          return {
+            accepted: true,
+            nextField: data.next_field || data.current_field,
+          };
         } catch (backendError) {
           setError(
             backendError instanceof Error
@@ -705,7 +711,7 @@ export function useFormFlow(
          * Simply repeat the current question.
          */
         promptForCurrentField();
-        return true;
+        return { accepted: true };
       }
 
       const extracted =
@@ -726,7 +732,7 @@ export function useFormFlow(
           "I could not identify a form detail. Please say the field and value, such as: My name is Vinu Priya."
         );
 
-        return false;
+        return { accepted: false };
       }
 
       const nextErrors:
@@ -807,7 +813,7 @@ export function useFormFlow(
           ]
         );
 
-        return false;
+        return { accepted: false };
       }
 
       /*
@@ -896,9 +902,11 @@ export function useFormFlow(
         );
       }
 
-      speakAndDisplay(
-        accepted.join(" ")
-      );
+      setStatusMessage(accepted.join(" "));
+      setMessages((previous) => [
+        ...previous,
+        { role: "assistant", text: accepted.join(" ") },
+      ]);
 
       window.setTimeout(
         () =>
@@ -908,7 +916,7 @@ export function useFormFlow(
         1600
       );
 
-      return true;
+      return { accepted: true };
     };
 
   /* ---------------------------------------------------------------------- */

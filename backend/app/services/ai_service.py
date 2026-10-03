@@ -29,12 +29,15 @@ class AIService:
         self._client: Any = None
 
     def _get_client(self) -> Any:
-        if not settings.GEMINI_API_KEY:
+        if not settings.GROQ_API_KEY:
             return None
         if self._client is None:
-            from google import genai
+            from openai import OpenAI
 
-            self._client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            self._client = OpenAI(
+                api_key=settings.GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1",
+            )
         return self._client
 
     def interpret(
@@ -48,11 +51,15 @@ class AIService:
     ) -> AIIntentResponse:
         service = get_service(service_type)
         allowed_fields = [field["name"] for field in service["fields"]]
-        logger.info("AI request started intent service=%s fields=%s", service_type, allowed_fields)
+        logger.info(
+            "AI request started intent service=%s fields=%s",
+            service_type,
+            allowed_fields,
+        )
 
         client = self._get_client()
         if client is None:
-            logger.warning("AI unavailable: GEMINI_API_KEY is not configured")
+            logger.warning("AI unavailable: GROQ_API_KEY is not configured")
             return AIIntentResponse(
                 intent="unknown",
                 needs_clarification=True,
@@ -66,7 +73,14 @@ class AIService:
         safe_data = {
             key: value
             for key, value in form_data.items()
-            if key not in {"aadhaar", "permanentAddress", "presentAddress", "mobile", "email"}
+            if key
+            not in {
+                "aadhaar",
+                "permanentAddress",
+                "presentAddress",
+                "mobile",
+                "email",
+            }
         }
         prompt = self._build_prompt(
             service["title"],
@@ -79,17 +93,34 @@ class AIService:
         )
 
         try:
-            response = client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=prompt,
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": AIIntentResponse,
-                },
+            response = client.chat.completions.create(
+                model=settings.GROQ_MODEL,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You extract structured form intents. "
+                            "Return valid JSON only."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0,
+                response_format={"type": "json_object"},
             )
-            result = AIIntentResponse.model_validate_json(response.text)
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Groq returned an empty response")
+            payload = json.loads(content)
+            fields = payload.get("fields")
+            if isinstance(fields, dict):
+                payload["fields"] = [
+                    {"field": field, "value": value}
+                    for field, value in fields.items()
+                ]
+            result = AIIntentResponse.model_validate(payload)
         except (ValidationError, json.JSONDecodeError, AttributeError, ValueError) as exc:
-            logger.exception("AI response validation failed: %s", exc)
+            logger.exception("Groq response validation failed: %s", exc)
             return AIIntentResponse(
                 intent="unknown",
                 needs_clarification=True,
@@ -99,7 +130,7 @@ class AIService:
                 ),
             )
         except Exception as exc:
-            logger.exception("AI request failed: %s", exc)
+            logger.exception("Groq request failed: %s", exc)
             return AIIntentResponse(
                 intent="unknown",
                 needs_clarification=True,
@@ -110,11 +141,15 @@ class AIService:
             )
 
         unknown_fields = {
-    item.field
-    for item in result.fields
-} - set(allowed_fields)
+            item.field
+            for item in result.fields
+        } - set(allowed_fields)
         if unknown_fields or result.intent not in ALLOWED_INTENTS:
-            logger.warning("AI response rejected unknown fields or intent fields=%s intent=%s", unknown_fields, result.intent)
+            logger.warning(
+                "AI response rejected unknown fields or intent fields=%s intent=%s",
+                unknown_fields,
+                result.intent,
+            )
             return AIIntentResponse(
                 intent="unknown",
                 needs_clarification=True,
@@ -122,10 +157,10 @@ class AIService:
             )
 
         logger.info(
-    "AI response received intent=%s fields=%s",
-    result.intent,
-    [item.field for item in result.fields],
-)
+            "AI response received intent=%s fields=%s",
+            result.intent,
+            [item.field for item in result.fields],
+        )
         return result
 
     @staticmethod
@@ -157,6 +192,13 @@ repeat_question, next_field, previous_field, confirm, clarification, unknown.
 Put only confidently extracted allowed field/value pairs in fields. For corrections use
 correct_field. For vague input set needs_clarification true and provide clarification_question.
 Do not validate values; deterministic application code validates them after extraction.
+
+The response must have exactly this shape:
+{{"intent":"update_fields","fields":[{{"field":"fullName","value":"Example Name"}}],
+"needs_clarification":false,"clarification_question":null,"confidence":0.95,
+"message":null,"fallback_to_client":false}}
+Use an empty list for fields when no field value was extracted. Never use an object/map
+for fields.
 """.strip()
 
 

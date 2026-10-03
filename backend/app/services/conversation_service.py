@@ -11,6 +11,7 @@ from app.models.forms import (
     ConversationSession,
 )
 from app.schemas.forms import (
+    AIFieldUpdate,
     AIIntentResponse,
     ApplicationCreate,
     ConversationMessageRequest,
@@ -505,10 +506,10 @@ def process_ai_message(
             and result.intent == "unknown"
         ):
             result.fields = [
-                {
-                    "field": session.current_field,
-                    "value": transcript,
-                }
+                AIFieldUpdate(
+                    field=session.current_field,
+                    value=transcript,
+                )
             ]
 
         else:
@@ -536,6 +537,24 @@ def process_ai_message(
     # ========================================================
     # EXTRACT AI FIELD UPDATES
     # ========================================================
+
+    # Guided voice mode is sequential. If the model extracts a different
+    # field than the one being asked, treat the transcript as the answer to
+    # the active field rather than allowing the session to move backwards.
+    if (
+        session.current_field
+        and result.intent == "update_fields"
+        and not any(
+            item.field == session.current_field
+            for item in result.fields
+        )
+    ):
+        result.fields = [
+            AIFieldUpdate(
+                field=session.current_field,
+                value=transcript,
+            )
+        ]
 
     normalized: dict[str, str] = {}
 

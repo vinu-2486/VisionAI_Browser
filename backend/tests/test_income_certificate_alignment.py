@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from app.services.ai_service import AIService
 from app.services.forms_service import get_required_fields
@@ -26,14 +27,15 @@ class IncomeCertificateAlignmentTests(unittest.TestCase):
         self.assertFalse(validate_field("mobile", "9876543210"))
 
     def test_ai_fails_closed_without_backend_key(self):
-        result = AIService().interpret(
-            "income_certificate",
-            "en",
-            "fullName",
-            {},
-            "My name is Vinu Priya",
-            [],
-        )
+        with patch("app.services.ai_service.settings.GROQ_API_KEY", ""):
+            result = AIService().interpret(
+                "income_certificate",
+                "en",
+                "fullName",
+                {},
+                "My name is Vinu Priya",
+                [],
+            )
         self.assertEqual(result.intent, "unknown")
         self.assertTrue(result.needs_clarification)
 

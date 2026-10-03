@@ -87,8 +87,15 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
   const voiceModeRef = useRef(voiceMode);
   const listeningRef = useRef(false);
   const promptGeneration = useRef(0);
+  const spellingActiveRef = useRef(false);
+  const skipNextFieldPromptRef = useRef(false);
   const { fields, currentField, completedCount, formComplete, updateField, applyVoiceInput, messages, busy, error, fieldErrors, highlightedField, statusMessage, validateForSubmit, focusNextMissing } = useFormFlow("income_certificate", language, voiceMode);
+  const currentFieldRef = useRef<FormField | undefined>(currentField);
   const requiredCount = fields.filter((field) => field.required).length;
+
+  useEffect(() => {
+    currentFieldRef.current = currentField;
+  }, [currentField]);
 
   useEffect(() => {
     voiceModeRef.current = voiceMode;
@@ -132,16 +139,35 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
     window.speechSynthesis.speak(utterance);
   };
 
+  const getVoiceOptions = (fieldId: string): string => {
+    if (fieldId === "gender") {
+      return " The options are Male, Female, Transgender, or Prefer not to say.";
+    }
+    if (fieldId === "state") {
+      return " The only available option is Tamil Nadu.";
+    }
+    if (fieldId === "maritalStatus") {
+      return " The options are Single, Married, Widowed, or Divorced.";
+    }
+    return "";
+  };
+
   useEffect(() => {
     if (!voiceMode || !currentField || !window.speechSynthesis) return;
+    if (spellingActiveRef.current) return;
+    if (skipNextFieldPromptRef.current) {
+      skipNextFieldPromptRef.current = false;
+      return;
+    }
     const spokenLabel = currentField.id === "fullName" ? "name" : currentField.label.toLowerCase();
-    const options = currentField.id === "gender" ? " The options are Male, Female, Transgender, or Prefer not to say." : currentField.id === "maritalStatus" ? " The options are Single, Married, Widowed, or Divorced." : currentField.id === "state" ? " The available option is Tamil Nadu." : "";
+    const options = getVoiceOptions(currentField.id);
     speakPromptAndListen(language === "ta" ? `தயவுசெய்து உங்கள் ${currentField.label} கூறவும்` : `Please tell your ${spokenLabel}.${options}`);
   }, [currentField?.id, language, voiceMode]);
 
   const startListening = () => {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition || !currentField || !voiceModeRef.current || listeningRef.current) return;
+    const activeField = currentFieldRef.current;
+    if (!Recognition || !activeField || !voiceModeRef.current || listeningRef.current) return;
     const instance = new Recognition();
     instance.lang = language === "ta" ? "ta-IN" : "en-IN";
     instance.continuous = false;
@@ -158,8 +184,8 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
         speakPromptAndListen(`Please tell your ${label || "answer"}.`);
         return;
       }
-      void applyVoiceInput(value).then((accepted) => {
-        if (!accepted) {
+      void applyVoiceInput(value).then((result) => {
+        if (!result.accepted) {
           window.setTimeout(() => {
             if (voiceModeRef.current && currentField) {
               speakPromptAndListen(`Please try your ${currentField.label.toLowerCase()} again.`);
@@ -167,13 +193,44 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
           }, 400);
           return;
         }
-        const extracted = extractFields(value, currentField?.id);
-const capturedId = currentField?.id && extracted[currentField.id] !== undefined ? currentField.id : Object.keys(extracted)[0] || "";
-const extractedValue = normalizeFieldValue(capturedId, extracted[capturedId] ?? value);
-const spelling = spokenValue(capturedId, extractedValue);
-        if (window.speechSynthesis) {
-          window.speechSynthesis.speak(new SpeechSynthesisUtterance(spelling));
-        }
+        const answeredField = currentFieldRef.current;
+        if (!answeredField || !window.speechSynthesis) return;
+
+        const extracted = extractFields(value, answeredField.id);
+        const capturedId =
+          answeredField.id &&
+          extracted[answeredField.id] !== undefined
+            ? answeredField.id
+            : Object.keys(extracted)[0] || answeredField.id;
+        const extractedValue = normalizeFieldValue(
+          capturedId,
+          extracted[capturedId] ?? value
+        );
+        const spelling = spokenValue(capturedId, extractedValue);
+        spellingActiveRef.current = true;
+        window.speechSynthesis.cancel();
+        const spellingUtterance = new SpeechSynthesisUtterance(spelling);
+        spellingUtterance.lang = language === "ta" ? "ta-IN" : "en-IN";
+        spellingUtterance.onend = () => {
+          spellingActiveRef.current = false;
+            const nextFieldId = result.nextField;
+          const nextField = fields.find((field) => field.id === nextFieldId);
+          if (voiceModeRef.current && nextField) {
+              currentFieldRef.current = nextField;
+              skipNextFieldPromptRef.current = true;
+              speakPromptAndListen(
+              language === "ta"
+                ? `தயவுசெய்து உங்கள் ${nextField.label} கூறவும்`
+                : `Please tell your ${
+                    nextField.id === "fullName"
+                      ? "name"
+                      : nextField.label.toLowerCase()
+                  }.${getVoiceOptions(nextField.id)}`
+            );
+          }
+        };
+
+        window.speechSynthesis.speak(spellingUtterance);
       });
     };
     instance.onerror = () => { listeningRef.current = false; setListening(false); if (voiceModeRef.current) window.setTimeout(() => startListening(), 500); };

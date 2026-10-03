@@ -24,7 +24,7 @@ The backend exposes the form schema, conversation, validation, and review flow u
 
 ## Notes
 
-The React app uses the conversation endpoints directly. Browser speech recognition supplies the message text; the optional AI service exposes server-side Faster-Whisper transcription for clients that need it.
+The React app uses the conversation endpoints directly. Browser speech recognition supplies the message text; the optional AI service exposes server-side Faster-Whisper transcription for clients that need it. Groq is called only from the backend and the API key is never sent to the browser.
 
 `POST /api/conversation/message` keeps the existing response fields and may add accepted field values for React state synchronization:
 
