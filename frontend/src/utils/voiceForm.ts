@@ -239,7 +239,7 @@ export function normalizeEmail(value: string) {
   return value
     .toLowerCase()
     .replace(
-      /\b(?:at the rate|at)\b/g,
+      /\b(?:at\s+the\s+rate|at)\b/g,
       "@"
     )
     .replace(
@@ -254,6 +254,7 @@ export function normalizeEmail(value: string) {
       /\b(?:hyphen|dash)\b/g,
       "-"
     )
+    .replace(/\s*\[\s*at\s*\]\s*/g, "@")
     .replace(/\s+/g, "")
     .replace(/,+/g, "");
 }
@@ -558,11 +559,7 @@ function cleanEmail(
     return written;
   }
 
-  return /\b(?:at|dot|period)\b/i.test(
-    value
-  )
-    ? normalizeEmail(value)
-    : value;
+  return normalizeEmail(value);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -655,7 +652,42 @@ function normalizePurpose(
     return "Government Benefit";
   }
 
+  if (/\b(?:education|educational)\b/.test(text)) {
+    return "Education";
+  }
+  if (/\bscholarship\b/.test(text)) {
+    return "Scholarship";
+  }
+  if (/\b(?:government|govt)\b.*\b(?:benefit|scheme|assistance)\b/.test(text)) {
+    return "Government Benefit";
+  }
+
   return tidy(value);
+}
+
+function normalizeIncome(value: string): string {
+  const text = tidy(value)
+    .toLowerCase()
+    .replace(/,/g, "");
+  const match = text.match(
+    /^(\d+(?:\.\d+)?)\s*(crores?|cr|lakhs?|lacs?|lac|thousands?|k)?$/
+  );
+  if (!match) return tidy(value);
+  const multipliers: Record<string, number> = {
+    crore: 10000000,
+    crores: 10000000,
+    cr: 10000000,
+    lakh: 100000,
+    lakhs: 100000,
+    lac: 100000,
+    lacs: 100000,
+    thousand: 1000,
+    thousands: 1000,
+    k: 1000,
+  };
+  const amount = Number(match[1]);
+  const result = amount * (multipliers[match[2] || ""] || 1);
+  return Number.isInteger(result) ? String(result) : String(result);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -726,6 +758,12 @@ function cleanForField(
       return normalizePurpose(
         value
       );
+
+    case "annualIncome":
+    case "annualIncomeAgriculture":
+    case "annualIncomeSalary":
+    case "annualIncomeOther":
+      return normalizeIncome(value);
 
     case "permanentAddress":
     case "presentAddress":
@@ -857,6 +895,17 @@ export function normalizeFieldValue(
     return normalizePurpose(
       trimmed
     );
+  }
+
+  if (
+    [
+      "annualIncome",
+      "annualIncomeAgriculture",
+      "annualIncomeSalary",
+      "annualIncomeOther",
+    ].includes(fieldId)
+  ) {
+    return normalizeIncome(trimmed);
   }
 
   if (

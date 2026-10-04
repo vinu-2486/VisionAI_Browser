@@ -13,10 +13,13 @@ export default function App() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [assistantService, setAssistantService] = useState("general");
+  const [resumeApplicationId, setResumeApplicationId] =
+    useState<number | null>(null);
 
   const openAssistant = (serviceType?: string) => {
     if (serviceType === "income_certificate") {
       setPage("IncomeCertificate");
+      setResumeApplicationId(null);
       setFormMode(null);
       setAssistantOpen(false);
       return;
@@ -57,13 +60,23 @@ export default function App() {
           />
         )}
 
-        {page === "History" && <FormSummary />}
+        {page === "History" && (
+          <FormSummary
+            onContinue={(applicationId) => {
+              setResumeApplicationId(applicationId);
+              setFormMode(null);
+              setPage("IncomeCertificate");
+            }}
+          />
+        )}
 
         {page === "IncomeCertificate" && (
           <IncomeCertificatePage
             mode={formMode}
             onChooseMode={setFormMode}
             onOpenHelp={() => setAssistantOpen(true)}
+            onStartNew={() => setResumeApplicationId(null)}
+            resumeApplicationId={resumeApplicationId}
           />
         )}
 

@@ -64,7 +64,6 @@ export default function HomePage({
 }: HomePageProps) {
   const [selectedService, setSelectedService] =
     useState<string | null>(null);
-
   const [clock, setClock] = useState(
     new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -423,115 +422,6 @@ export default function HomePage({
 
           </div>
 
-        </section>
-      )}
-
-      {/* LIVE ACTIVITY */}
-      {!servicesOnly && (
-        <section className="product-section">
-
-          <div className="section-heading-row">
-
-            <div>
-              <div className="eyebrow">
-                YOUR SPACE
-              </div>
-
-              <h2>
-                Continue where you left off.
-              </h2>
-            </div>
-
-            <button
-              className="text-button"
-              onClick={() => onNavigate("History")}
-            >
-              View history →
-            </button>
-
-          </div>
-
-          <div className="activity-v2">
-
-            <div className="activity-feature">
-
-              <div className="activity-feature-icon">
-                ₹
-              </div>
-
-              <div className="activity-feature-content">
-                <small>
-                  DRAFT APPLICATION
-                </small>
-
-                <h3>
-                  Income Certificate
-                </h3>
-
-                <p>
-                  4 of 5 steps completed.
-                  Your information is ready for review.
-                </p>
-
-                <div className="activity-progress">
-                  <div>
-                    <span />
-                  </div>
-
-                  <small>
-                    82% complete
-                  </small>
-                </div>
-              </div>
-
-              <button
-                className="continue-button"
-                onClick={() =>
-                  onNavigate("History")
-                }
-              >
-                Continue →
-              </button>
-
-            </div>
-
-            <div className="activity-list">
-
-              <div className="activity-item">
-                <div className="activity-dot cyan" />
-
-                <div>
-                  <strong>
-                    Scholarship Application
-                  </strong>
-
-                  <span>
-                    Review completed · Yesterday
-                  </span>
-                </div>
-
-                <b>✓</b>
-              </div>
-
-              <div className="activity-item">
-                <div className="activity-dot blue" />
-
-                <div>
-                  <strong>
-                    Nativity Certificate
-                  </strong>
-
-                  <span>
-                    Application started · 2 days ago
-                  </span>
-                </div>
-
-                <b>→</b>
-              </div>
-
-            </div>
-
-          </div>
         </section>
       )}
 
