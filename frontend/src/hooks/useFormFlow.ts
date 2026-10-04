@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -33,6 +34,8 @@ export interface ConversationMessage {
 export interface VoiceInputResult {
   accepted: boolean;
   nextField?: string | null;
+  nextFieldLabel?: string;
+  message?: string;
 }
 
 const API_URL =
@@ -85,7 +88,8 @@ const initialFields: FormField[] = [
 export function useFormFlow(
   serviceType = "income_certificate",
   language: "en" | "ta" = "en",
-  conversationEnabled = true
+  conversationEnabled = true,
+  resumeApplicationId: number | null = null
 ) {
   const [fields, setFields] =
     useState<FormField[]>(
@@ -97,6 +101,10 @@ export function useFormFlow(
 
   const [sessionId, setSessionId] =
     useState<string | null>(null);
+
+  const [applicationId, setApplicationId] =
+    useState<number | null>(null);
+  const startingSessionRef = useRef(false);
 
   const [messages, setMessages] =
     useState<ConversationMessage[]>(
@@ -161,15 +169,57 @@ export function useFormFlow(
 
   const startSession =
     useCallback(async () => {
-      if (!conversationEnabled) {
+      if (!conversationEnabled || startingSessionRef.current) {
         setMessages([]);
         return;
       }
 
+      startingSessionRef.current = true;
       setBusy(true);
       setError("");
 
       try {
+        const savedResponse = await fetch(
+          `${API_URL}/forms?limit=50`
+        );
+        let savedApplication:
+          | {
+              id: number;
+              service_type: string;
+              status: string;
+              data: Record<string, unknown>;
+            }
+          | undefined;
+
+        if (savedResponse.ok) {
+          const savedApplications = await savedResponse.json();
+          savedApplication = savedApplications.find(
+            (application: {
+              id: number;
+              service_type: string;
+              status: string;
+              data: Record<string, unknown>;
+            }) =>
+              (resumeApplicationId === application.id ||
+                (!resumeApplicationId &&
+                  application?.service_type === serviceType)) &&
+              ["draft", "in_progress"].includes(application.status)
+          );
+        }
+
+        if (savedApplication) {
+          setApplicationId(savedApplication.id);
+          setFields((previous) =>
+            previous.map((field) => ({
+              ...field,
+              value:
+                savedApplication?.data[field.id] !== undefined
+                  ? String(savedApplication.data[field.id])
+                  : field.value,
+            }))
+          );
+        }
+
         const response =
           await fetch(
             `${API_URL}/conversation/start`,
@@ -180,14 +230,17 @@ export function useFormFlow(
                   "application/json",
               },
               body: JSON.stringify({
-                service_type:
-                  serviceType,
+                ...(savedApplication
+                  ? { application_id: savedApplication.id }
+                  : { service_type: serviceType }),
                 language,
-                  data: Object.fromEntries(
-                    fields
-                      .filter((field) => field.value.trim())
-                      .map((field) => [field.id, field.value])
-                  ),
+                data: savedApplication
+                  ? {}
+                  : Object.fromEntries(
+                      fields
+                        .filter((field) => field.value.trim())
+                        .map((field) => [field.id, field.value])
+                    ),
               }),
             }
           );
@@ -204,6 +257,7 @@ export function useFormFlow(
         setSessionId(
           data.session_id
         );
+        setApplicationId(data.application_id);
 
         setCurrentFromId(
           data.current_field
@@ -236,12 +290,14 @@ export function useFormFlow(
           },
         ]);
       } finally {
+        startingSessionRef.current = false;
         setBusy(false);
       }
     }, [
       conversationEnabled,
       fields,
       language,
+      resumeApplicationId,
       serviceType,
     ]);
 
@@ -678,12 +734,20 @@ export function useFormFlow(
           if (Object.keys(backendErrors).length) {
             setHighlightedField(Object.keys(backendErrors)[0]);
             setStatusMessage(data.assistant_message);
-            return { accepted: false };
+            return {
+              accepted: false,
+              message: data.assistant_message,
+            };
           }
           setStatusMessage(data.assistant_message);
           return {
             accepted: true,
             nextField: data.next_field || data.current_field,
+            nextFieldLabel: data.next_field_label || fields.find(
+              (field) =>
+                field.id === (data.next_field || data.current_field)
+            )?.label,
+            message: data.assistant_message,
           };
         } catch (backendError) {
           setError(
@@ -1324,6 +1388,9 @@ export function useFormFlow(
 
       setSessionId(null);
 
+      setApplicationId(null);
+      startingSessionRef.current = false;
+
       setMessages([]);
 
       setError("");
@@ -1336,6 +1403,108 @@ export function useFormFlow(
 
       setStatusMessage("");
     };
+
+  useEffect(() => {
+    if (conversationEnabled || applicationId || resumeApplicationId) {
+      return;
+    }
+
+    void fetch(`${API_URL}/forms`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        service_type: serviceType,
+        language,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to create a saved application.");
+        }
+        const application = await response.json();
+        setApplicationId(application.id);
+      })
+      .catch((saveError) => {
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "Unable to create a saved application."
+        );
+      });
+  }, [
+    applicationId,
+    conversationEnabled,
+    language,
+    resumeApplicationId,
+    serviceType,
+  ]);
+
+  useEffect(() => {
+    if (!resumeApplicationId || applicationId) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
+    void fetch(`${API_URL}/forms/${resumeApplicationId}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Unable to load the saved application.");
+        }
+        const application = await response.json();
+        setApplicationId(application.id);
+        setFields((previous) =>
+          previous.map((field) => ({
+            ...field,
+            value:
+              application.data[field.id] !== undefined
+                ? String(application.data[field.id])
+                : field.value,
+          }))
+        );
+      })
+      .catch((loadError) => {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load the saved application."
+        );
+      })
+      .finally(() => setBusy(false));
+  }, [applicationId, resumeApplicationId]);
+
+  useEffect(() => {
+    if (!applicationId || !fields.some((field) => field.value.trim())) {
+      return;
+    }
+
+    const data = Object.fromEntries(
+      fields
+        .filter((field) => field.value.trim())
+        .map((field) => [field.id, field.value])
+    );
+
+    void fetch(`${API_URL}/forms/${applicationId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ data }),
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Unable to save the application.");
+      }
+    }).catch((saveError) => {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save the application."
+      );
+    });
+  }, [applicationId, fields]);
 
   /* ---------------------------------------------------------------------- */
   /* Return                                                                 */
@@ -1353,6 +1522,7 @@ export function useFormFlow(
     nextField,
     previousField,
     resetForm,
+    applicationId,
 
     messages,
 

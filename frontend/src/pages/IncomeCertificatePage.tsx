@@ -6,6 +6,8 @@ interface IncomeCertificatePageProps {
   mode: "manual" | "voice" | null;
   onChooseMode: (mode: "manual" | "voice" | null) => void;
   onOpenHelp: () => void;
+  onStartNew?: () => void;
+  resumeApplicationId?: number | null;
 }
 
 interface RecognitionEvent extends Event {
@@ -75,7 +77,7 @@ function FormFieldEditor({
   );
 }
 
-export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }: IncomeCertificatePageProps) {
+export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp, onStartNew, resumeApplicationId = null }: IncomeCertificatePageProps) {
   const voiceMode = mode === "voice";
   const [language, setLanguage] = useState<"en" | "ta">("en");
   const [listening, setListening] = useState(false);
@@ -88,8 +90,9 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
   const listeningRef = useRef(false);
   const promptGeneration = useRef(0);
   const spellingActiveRef = useRef(false);
-  const skipNextFieldPromptRef = useRef(false);
-  const { fields, currentField, completedCount, formComplete, updateField, applyVoiceInput, messages, busy, error, fieldErrors, highlightedField, statusMessage, validateForSubmit, focusNextMissing } = useFormFlow("income_certificate", language, voiceMode);
+  const lastPromptedFieldRef = useRef<string | null>(null);
+  const awaitingRecognitionResultRef = useRef(false);
+  const { fields, currentField, completedCount, formComplete, updateField, applyVoiceInput, messages, busy, error, fieldErrors, highlightedField, statusMessage, validateForSubmit, focusNextMissing, resetForm } = useFormFlow("income_certificate", language, voiceMode, resumeApplicationId);
   const currentFieldRef = useRef<FormField | undefined>(currentField);
   const requiredCount = fields.filter((field) => field.required).length;
 
@@ -129,6 +132,10 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
 
   const speakPromptAndListen = (message: string) => {
     if (!voiceModeRef.current) return;
+    const fieldId = currentFieldRef.current?.id;
+    if (fieldId) {
+      lastPromptedFieldRef.current = fieldId;
+    }
     const generation = ++promptGeneration.current;
     const utterance = new SpeechSynthesisUtterance(message);
     utterance.lang = language === "ta" ? "ta-IN" : "en-IN";
@@ -155,8 +162,7 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
   useEffect(() => {
     if (!voiceMode || !currentField || !window.speechSynthesis) return;
     if (spellingActiveRef.current) return;
-    if (skipNextFieldPromptRef.current) {
-      skipNextFieldPromptRef.current = false;
+    if (lastPromptedFieldRef.current === currentField.id) {
       return;
     }
     const spokenLabel = currentField.id === "fullName" ? "name" : currentField.label.toLowerCase();
@@ -169,33 +175,42 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
     const activeField = currentFieldRef.current;
     if (!Recognition || !activeField || !voiceModeRef.current || listeningRef.current) return;
     const instance = new Recognition();
+    awaitingRecognitionResultRef.current = false;
     instance.lang = language === "ta" ? "ta-IN" : "en-IN";
     instance.continuous = false;
     instance.interimResults = false;
     instance.onresult = (event) => {
       const value = event.results[0]?.[0]?.transcript.trim() || "";
       if (!value) return;
+      const answeredField = currentFieldRef.current;
+      if (!answeredField) return;
+      awaitingRecognitionResultRef.current = true;
       if (isExitVoiceCommand(value)) {
         onChooseMode("manual");
         return;
       }
       if (isNextCommand(value) || isRepeatCommand(value)) {
         const label = currentField?.id === "fullName" ? "name" : currentField?.label.toLowerCase();
+        awaitingRecognitionResultRef.current = false;
         speakPromptAndListen(`Please tell your ${label || "answer"}.`);
         return;
       }
+      spellingActiveRef.current = true;
       void applyVoiceInput(value).then((result) => {
         if (!result.accepted) {
+          spellingActiveRef.current = false;
+          awaitingRecognitionResultRef.current = false;
           window.setTimeout(() => {
-            if (voiceModeRef.current && currentField) {
-              speakPromptAndListen(`Please try your ${currentField.label.toLowerCase()} again.`);
+            const failedField = currentFieldRef.current;
+            if (voiceModeRef.current && failedField) {
+              lastPromptedFieldRef.current = null;
+              speakPromptAndListen(
+                `${result.message || "That answer was not valid."} Please try your ${failedField.label.toLowerCase()} again.`
+              );
             }
           }, 400);
           return;
         }
-        const answeredField = currentFieldRef.current;
-        if (!answeredField || !window.speechSynthesis) return;
-
         const extracted = extractFields(value, answeredField.id);
         const capturedId =
           answeredField.id &&
@@ -207,17 +222,16 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
           extracted[capturedId] ?? value
         );
         const spelling = spokenValue(capturedId, extractedValue);
-        spellingActiveRef.current = true;
-        window.speechSynthesis.cancel();
-        const spellingUtterance = new SpeechSynthesisUtterance(spelling);
-        spellingUtterance.lang = language === "ta" ? "ta-IN" : "en-IN";
-        spellingUtterance.onend = () => {
+        let advanced = false;
+        const advance = () => {
+          if (advanced) return;
+          advanced = true;
           spellingActiveRef.current = false;
-            const nextFieldId = result.nextField;
+          const nextFieldId = result.nextField;
           const nextField = fields.find((field) => field.id === nextFieldId);
+          const nextLabel = result.nextFieldLabel || nextField?.label;
           if (voiceModeRef.current && nextField) {
               currentFieldRef.current = nextField;
-              skipNextFieldPromptRef.current = true;
               speakPromptAndListen(
               language === "ta"
                 ? `தயவுசெய்து உங்கள் ${nextField.label} கூறவும்`
@@ -227,14 +241,54 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
                       : nextField.label.toLowerCase()
                   }.${getVoiceOptions(nextField.id)}`
             );
+          } else if (voiceModeRef.current && nextFieldId && nextLabel) {
+            currentFieldRef.current = {
+              id: nextFieldId,
+              label: nextLabel,
+              value: "",
+              required: true,
+            };
+            speakPromptAndListen(
+              `Please tell your ${
+                nextFieldId === "fullName"
+                  ? "name"
+                  : nextLabel.toLowerCase()
+              }.${getVoiceOptions(nextFieldId)}`
+            );
           }
+          awaitingRecognitionResultRef.current = false;
         };
-
+        if (!window.speechSynthesis) {
+          advance();
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const spellingUtterance = new SpeechSynthesisUtterance(spelling);
+        spellingUtterance.lang = language === "ta" ? "ta-IN" : "en-IN";
+        spellingUtterance.rate = 0.72;
+        spellingUtterance.onend = advance;
         window.speechSynthesis.speak(spellingUtterance);
+        window.setTimeout(advance, 6000);
       });
     };
-    instance.onerror = () => { listeningRef.current = false; setListening(false); if (voiceModeRef.current) window.setTimeout(() => startListening(), 500); };
-    instance.onend = () => { listeningRef.current = false; setListening(false); };
+    instance.onerror = () => {
+      listeningRef.current = false;
+      setListening(false);
+      if (voiceModeRef.current && !awaitingRecognitionResultRef.current) {
+        window.setTimeout(() => startListening(), 700);
+      }
+    };
+    instance.onend = () => {
+      listeningRef.current = false;
+      setListening(false);
+      if (
+        voiceModeRef.current &&
+        !awaitingRecognitionResultRef.current &&
+        !spellingActiveRef.current
+      ) {
+        window.setTimeout(() => startListening(), 700);
+      }
+    };
     recognition.current = instance;
     listeningRef.current = true;
     setListening(true);
@@ -259,6 +313,17 @@ export default function IncomeCertificatePage({ mode, onChooseMode, onOpenHelp }
         <h1>Form filled successfully</h1>
         <p>All required information has been captured. Further procedure will be informed soon.</p>
         <button className="success-return" onClick={() => setShowSuccess(false)}>Review filled form</button>
+        <button
+          className="secondary-cta"
+          onClick={() => {
+            setShowSuccess(false);
+            onStartNew?.();
+            onChooseMode(null);
+            resetForm();
+          }}
+        >
+          Start a new application
+        </button>
       </section>
     );
   }

@@ -83,14 +83,39 @@ def normalize_digits(value: str) -> str:
 
 
 def normalize_email(value: str) -> str:
-    return (
-        value.strip()
-        .lower()
-        .replace(" at ", "@")
-        .replace(" dot ", ".")
-        .replace(" at the rate ", "@")
-        .replace(" ", "")
+    normalized = value.strip().lower()
+    normalized = re.sub(r"\s+at\s+the\s+rate\s+", "@", normalized)
+    normalized = re.sub(r"\s+at\s+", "@", normalized)
+    normalized = re.sub(r"\s+(?:dot|period)\s+", ".", normalized)
+    normalized = re.sub(r"\s+(?:underscore|under\s+score)\s+", "_", normalized)
+    normalized = re.sub(r"\s+(?:hyphen|dash)\s+", "-", normalized)
+    return re.sub(r"\s+", "", normalized)
+
+
+def normalize_income(value: str) -> str:
+    text = value.strip().lower().replace(",", "")
+    units = {
+        "crore": 10_000_000,
+        "crores": 10_000_000,
+        "cr": 10_000_000,
+        "lakh": 100_000,
+        "lakhs": 100_000,
+        "lac": 100_000,
+        "lacs": 100_000,
+        "thousand": 1_000,
+        "thousands": 1_000,
+        "k": 1_000,
+    }
+    match = re.fullmatch(
+        r"(\d+(?:\.\d+)?)\s*(crores?|cr|lakhs?|lacs?|lac|thousands?|k)?",
+        text,
     )
+    if not match:
+        return value.strip()
+    amount = float(match.group(1))
+    multiplier = units.get(match.group(2) or "", 1)
+    result = amount * multiplier
+    return str(int(result) if result.is_integer() else result)
 
 
 def normalize_field_value(field: str, value: str) -> str:
@@ -118,6 +143,13 @@ def normalize_field_value(field: str, value: str) -> str:
             except ValueError:
                 continue
         return normalized
+    if field in {
+        "annualIncome",
+        "annualIncomeAgriculture",
+        "annualIncomeSalary",
+        "annualIncomeOther",
+    }:
+        return normalize_income(value)
     if field == "state" and value.strip().casefold() == "tamil nadu":
         return "Tamil Nadu"
     if field == "gender":
@@ -141,6 +173,26 @@ def normalize_field_value(field: str, value: str) -> str:
             "divorced": "Divorced",
         }
         return marital_values.get(value.strip().casefold(), value.strip())
+    if field == "purpose":
+        purpose_values = {
+            "education": "Education",
+            "educational": "Education",
+            "scholarship": "Scholarship",
+            "government benefit": "Government Benefit",
+            "government scheme": "Government Benefit",
+            "government assistance": "Government Benefit",
+        }
+        normalized = value.strip().casefold()
+        if "education" in normalized:
+            return "Education"
+        if "scholarship" in normalized:
+            return "Scholarship"
+        if (
+            ("government" in normalized or "govt" in normalized)
+            and any(word in normalized for word in ("benefit", "scheme", "assistance"))
+        ):
+            return "Government Benefit"
+        return purpose_values.get(normalized, value.strip())
     for city in TAMIL_NADU_CITIES:
         if field == "city" and city.casefold() == value.strip().casefold():
             return city

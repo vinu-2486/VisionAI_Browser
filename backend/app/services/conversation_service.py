@@ -807,6 +807,17 @@ def _conversation_response(
         "assistant_message": assistant_message,
         "current_field": current_field,
         "next_field": next_field,
+        "next_field_label": (
+            get_field_definition(
+                application.service_type,
+                next_field,
+            )["label"]
+            if next_field and get_field_definition(
+                application.service_type,
+                next_field,
+            )
+            else None
+        ),
         "completed": completed,
         "validation_errors": validation_errors,
         "fields": fields or {},
